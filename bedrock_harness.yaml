@@ -23,6 +23,10 @@ auth:
 
 http:
   timeout_seconds: 120
+  retry:
+    max_attempts: 2
+    backoff_seconds: 0.6
+    retry_on_connection_error: true
 
 defaults:
   preset: "analysis_max"
