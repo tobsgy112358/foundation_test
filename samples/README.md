@@ -2,7 +2,10 @@
 
 Put your local test files here (or update paths in `bedrock_harness.yaml`):
 
-- `demo_image.jpg` for `image_understanding_claude`
-- `demo_video.mp4` for `video_understanding_claude`
+- `demo_image.jpg` for image understanding tests
+- `demo_video.mp4` for video understanding tests
 
-You can rename files, but then update the corresponding `multimodal.scenarios.*.media[].path` values in YAML.
+You can rename files, but then update:
+
+- `multimodal.default_image_path`
+- `multimodal.default_video_path`

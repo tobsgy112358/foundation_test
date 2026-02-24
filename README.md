@@ -11,10 +11,10 @@ This repo is a minimal foundational playground for:
   - Local test notebook for request construction, model invocation, and response checks
   - Useful for sanity checks across prompt styles and model presets
 - `test_bedrock_multimodal.ipynb`
-  - Config-driven multimodal notebook for image/video generation and image/video understanding
-  - Scenario parameters are fully managed in YAML (`multimodal.scenarios`)
+  - Unified multimodal notebook for conversation / image understanding / video understanding / image generation / video generation
+  - Prompts and test inputs are defined in notebook test modules (not in YAML)
 - `bedrock_harness.yaml`
-  - Harness configuration for auth, endpoints, model presets, defaults, and multimodal scenarios
+  - Harness configuration for auth, endpoints, model catalog, and unified `use_cases` presets/fallbacks
 - `samples/README.md`
   - Notes on where to place local sample image/video files for multimodal understanding
 
@@ -23,6 +23,9 @@ This repo is a minimal foundational playground for:
 - Keep setup simple and reproducible
 - Validate end-to-end API connectivity quickly
 - Compare LLM output quality/latency at a foundational baseline level
+- Keep config ownership clear:
+  - YAML = models + quality levels + fallback chains
+  - Notebook = prompts + runtime test inputs
 
 ## Quick start
 

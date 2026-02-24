@@ -84,6 +84,10 @@ models:
     provider: "nova"
     model_id: "amazon.nova-pro-v1:0"
 
+  nova_lite:
+    provider: "nova"
+    model_id: "amazon.nova-lite-v1:0"
+
   nova_micro:
     provider: "nova"
     model_id: "amazon.nova-micro-v1:0"
@@ -98,6 +102,10 @@ models:
   nova_reel:
     provider: "nova"
     model_id: "amazon.nova-reel-v1:0"
+
+  titan_image_v2:
+    provider: "titan_image"
+    model_id: "amazon.titan-image-generator-v2:0"
 
 presets:
   # Fast sanity checks (Claude-first)
@@ -161,134 +169,194 @@ presets:
       temperature: 0.2
       max_output_tokens: 8192
 
+use_cases:
+  # Unified use-case registry.
+  # Each use case has:
+  # - adapter: execution strategy in notebook
+  # - default_preset: default quality level
+  # - presets: ordered fallback model candidates
+  conversation:
+    adapter: "conversation"
+    default_preset: "analysis_default"
+    presets:
+      analysis_fast:
+        - model_ref: "claude_haiku_35_us"
+          temperature: 0.2
+          max_output_tokens: 1024
+        - model_ref: "nova_micro"
+          temperature: 0.2
+          max_output_tokens: 1024
+        - model_ref: "gpt_oss_20b"
+          temperature: 0.2
+          max_output_tokens: 1024
+
+      analysis_default:
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 3072
+        - model_ref: "claude_opus_45_global"
+          temperature: 0.2
+          max_output_tokens: 3072
+        - model_ref: "gpt_oss_120b"
+          temperature: 0.2
+          max_output_tokens: 3072
+        - model_ref: "nova_pro"
+          temperature: 0.2
+          max_output_tokens: 3072
+
+      analysis_max:
+        - model_ref: "claude_opus_46_global"
+          temperature: 1
+          max_output_tokens: 16000
+          anthropic:
+            thinking:
+              enabled: true
+              budget_tokens: 14000
+        - model_ref: "gpt_oss_120b"
+          temperature: 0.2
+          max_output_tokens: 8192
+        - model_ref: "nova_pro"
+          temperature: 0.2
+          max_output_tokens: 8192
+
+  image_understanding:
+    adapter: "understanding"
+    media_kind: "image"
+    default_preset: "vision_default"
+    presets:
+      vision_fast:
+        - model_ref: "claude_haiku_35_us"
+          temperature: 0.2
+          max_output_tokens: 1200
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 1200
+
+      vision_default:
+        - model_ref: "claude_opus_46_global"
+          temperature: 0.2
+          max_output_tokens: 1800
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 1800
+        - model_ref: "claude_opus_45_global"
+          temperature: 0.2
+          max_output_tokens: 1800
+
+      vision_max:
+        - model_ref: "claude_opus_46_global"
+          temperature: 1
+          max_output_tokens: 3200
+          anthropic:
+            thinking:
+              enabled: true
+              budget_tokens: 2600
+        - model_ref: "claude_opus_45_global"
+          temperature: 0.2
+          max_output_tokens: 2200
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 2200
+
+  video_understanding:
+    adapter: "understanding"
+    media_kind: "video"
+    default_preset: "video_default"
+    presets:
+      video_fast:
+        - model_ref: "claude_haiku_35_us"
+          temperature: 0.2
+          max_output_tokens: 1200
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 1200
+
+      video_default:
+        - model_ref: "claude_opus_46_global"
+          temperature: 0.2
+          max_output_tokens: 2000
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 2000
+        - model_ref: "claude_opus_45_global"
+          temperature: 0.2
+          max_output_tokens: 2000
+
+      video_max:
+        - model_ref: "claude_opus_46_global"
+          temperature: 1
+          max_output_tokens: 3600
+          anthropic:
+            thinking:
+              enabled: true
+              budget_tokens: 3000
+        - model_ref: "claude_opus_45_global"
+          temperature: 0.2
+          max_output_tokens: 2400
+        - model_ref: "claude_sonnet_45_global"
+          temperature: 0.2
+          max_output_tokens: 2400
+
+  image_generation:
+    adapter: "image_generation"
+    default_preset: "image_default"
+    output:
+      save_subdir: "images"
+      file_ext: "png"
+    presets:
+      image_fast:
+        - model_ref: "nova_canvas"
+          width: 768
+          height: 768
+          cfg_scale: 6.5
+          number_of_images: 1
+      image_default:
+        - model_ref: "nova_canvas"
+          width: 1024
+          height: 1024
+          cfg_scale: 8.0
+          number_of_images: 1
+        - model_ref: "titan_image_v2"
+          width: 1024
+          height: 1024
+          cfg_scale: 8.0
+          number_of_images: 1
+      image_max:
+        - model_ref: "nova_canvas"
+          width: 1280
+          height: 1280
+          cfg_scale: 9.0
+          number_of_images: 1
+        - model_ref: "titan_image_v2"
+          width: 1024
+          height: 1024
+          cfg_scale: 9.0
+          number_of_images: 1
+
+  video_generation:
+    adapter: "video_generation"
+    default_preset: "video_default"
+    output:
+      save_subdir: "videos"
+      file_ext: "mp4"
+    presets:
+      video_fast:
+        - model_ref: "nova_reel"
+          duration_seconds: 4
+          fps: 24
+          dimension: "1280x720"
+      video_default:
+        - model_ref: "nova_reel"
+          duration_seconds: 6
+          fps: 24
+          dimension: "1280x720"
+      video_max:
+        - model_ref: "nova_reel"
+          duration_seconds: 8
+          fps: 24
+          dimension: "1920x1080"
+
 multimodal:
   output_dir: "./outputs"
-
-  # Scenarios executed by default in test_bedrock_multimodal.ipynb
-  default_run:
-    - "image_generation_canvas"
-    - "video_generation_reel"
-    - "image_understanding_claude"
-    - "video_understanding_claude"
-
-  scenarios:
-    # ---------------------------------------------------------
-    # 1) Image generation (Nova Canvas)
-    # ---------------------------------------------------------
-    image_generation_canvas:
-      kind: "invoke_template"
-      model_ref: "nova_canvas"
-      endpoint_path: "/model/{model_id}/invoke"
-      timeout_seconds: 180
-
-      template_vars:
-        prompt: "A cinematic cyberpunk city at sunrise, volumetric light, ultra detailed."
-        negative_prompt: "blurry, low resolution, watermark, text artifacts"
-        width: 1024
-        height: 1024
-        cfg_scale: 8.0
-        seed: 7
-        number_of_images: 1
-
-      request_template:
-        taskType: "TEXT_IMAGE"
-        textToImageParams:
-          text: "{prompt}"
-          negativeText: "{negative_prompt}"
-        imageGenerationConfig:
-          numberOfImages: "{number_of_images}"
-          width: "{width}"
-          height: "{height}"
-          cfgScale: "{cfg_scale}"
-          seed: "{seed}"
-
-      response:
-        type: "base64_images"
-        path: "images"
-        save_dir: "images"
-        file_ext: "png"
-
-    # ---------------------------------------------------------
-    # 2) Video generation (Nova Reel)
-    #    If your account/region returns async job metadata only,
-    #    the notebook will capture the job id for follow-up polling.
-    # ---------------------------------------------------------
-    video_generation_reel:
-      kind: "invoke_template"
-      model_ref: "nova_reel"
-      endpoint_path: "/model/{model_id}/invoke"
-      timeout_seconds: 300
-
-      template_vars:
-        prompt: "A drone fly-through above snow mountains at golden hour, cinematic."
-        duration_seconds: 6
-        fps: 24
-        dimension: "1280x720"
-        seed: 11
-
-      request_template:
-        taskType: "TEXT_VIDEO"
-        textToVideoParams:
-          text: "{prompt}"
-        videoGenerationConfig:
-          durationSeconds: "{duration_seconds}"
-          fps: "{fps}"
-          dimension: "{dimension}"
-          seed: "{seed}"
-
-      response:
-        type: "base64_video_or_job"
-        video_path_candidates:
-          - "video"
-          - "videoBase64"
-          - "output.video"
-          - "result.video"
-        job_id_candidates:
-          - "invocationArn"
-          - "jobArn"
-          - "jobId"
-          - "id"
-        save_dir: "videos"
-        file_ext: "mp4"
-
-    # ---------------------------------------------------------
-    # 3) Image understanding (Claude multimodal)
-    # ---------------------------------------------------------
-    image_understanding_claude:
-      kind: "anthropic_messages"
-      model_ref: "claude_sonnet_45_global"
-      timeout_seconds: 180
-      max_output_tokens: 1200
-      temperature: 0.2
-
-      system_prompt: "You are a visual analyst. Be precise and concise."
-      user_prompt: "Please describe the image, extract key objects, and infer the likely scenario."
-      media:
-        - name: "input_image"
-          type: "image"
-          path: "./samples/demo_image.jpg"
-          media_type: "image/jpeg"
-
-      response:
-        type: "anthropic_text"
-
-    # ---------------------------------------------------------
-    # 4) Video understanding (Claude multimodal)
-    # ---------------------------------------------------------
-    video_understanding_claude:
-      kind: "anthropic_messages"
-      model_ref: "claude_sonnet_45_global"
-      timeout_seconds: 240
-      max_output_tokens: 1400
-      temperature: 0.2
-
-      system_prompt: "You are a video analyst. Summarize actions, timeline, and key events."
-      user_prompt: "Please summarize this video and list major events in chronological order."
-      media:
-        - name: "input_video"
-          type: "video"
-          path: "./samples/demo_video.mp4"
-          media_type: "video/mp4"
-
-      response:
-        type: "anthropic_text"
+  default_image_path: "./samples/demo_image.jpg"
+  default_video_path: "./samples/demo_video.mp4"
