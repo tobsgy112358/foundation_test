@@ -1,0 +1,151 @@
+# ============================================================
+# Amazon Bedrock local harness config (invoke + bearer token)
+# ============================================================
+# Auth model:
+#   - You MUST export a Bedrock long-term API key (bearer token) as an env var
+#     before launching VS Code / Jupyter.
+#
+# Required env var:
+#   export AWS_BEARER_TOKEN_BEDROCK="ABSK..."
+#
+# Optional env var (overrides default_region below):
+#   export AWS_REGION="us-east-1"
+#
+# Notes:
+# - Do NOT store secrets in this YAML.
+# - Presets are ordered fallbacks: we try models in order until one succeeds.
+# ============================================================
+
+auth:
+  token_env: "AWS_BEARER_TOKEN_BEDROCK"
+  region_env: "AWS_REGION"
+  default_region: "us-east-1"
+
+http:
+  timeout_seconds: 120
+
+defaults:
+  preset: "analysis_max"
+  debug_fallback: true
+
+# Base URL template for Bedrock Runtime.
+endpoints:
+  bedrock_runtime_base: "https://bedrock-runtime.{region}.amazonaws.com"
+
+providers:
+  anthropic:
+    anthropic_version: "bedrock-2023-05-31"
+  openai_compat:
+    chat_completions_path: "/openai/v1/chat/completions"
+    system_role: "developer"
+    max_tokens_param: "max_completion_tokens"
+
+models:
+  # ---------------------------
+  # Claude (Anthropic) profiles
+  # ---------------------------
+  # Opus 4.6 (US profile)
+  claude_opus_46_us:
+    provider: "anthropic"
+    model_id: "us.anthropic.claude-opus-4-6-v1"
+
+  # Opus 4.6 (Global profile)
+  claude_opus_46_global:
+    provider: "anthropic"
+    model_id: "global.anthropic.claude-opus-4-6-v1"
+
+  # Sonnet 4.5 (Global profile)
+  claude_sonnet_45_global:
+    provider: "anthropic"
+    model_id: "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+  # Opus 4.5 (Global profile)
+  claude_opus_45_global:
+    provider: "anthropic"
+    model_id: "global.anthropic.claude-opus-4-5-20251101-v1:0"
+
+  # Haiku 3.5 (US profile)
+  claude_haiku_35_us:
+    provider: "anthropic"
+    model_id: "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+
+  # ---------------------------
+  # Fallbacks (non-Claude)
+  # ---------------------------
+  gpt_oss_120b:
+    provider: "openai_compat"
+    model_id: "openai.gpt-oss-120b-1:0"
+
+  gpt_oss_20b:
+    provider: "openai_compat"
+    model_id: "openai.gpt-oss-20b-1:0"
+
+  nova_pro:
+    provider: "nova"
+    model_id: "amazon.nova-pro-v1:0"
+
+  nova_micro:
+    provider: "nova"
+    model_id: "amazon.nova-micro-v1:0"
+
+presets:
+  # Fast sanity checks (Claude-first)
+  cheap_fast:
+    - model_ref: "claude_haiku_35_us"
+      temperature: 0.2
+      max_output_tokens: 1024
+    - model_ref: "nova_micro"
+      temperature: 0.2
+      max_output_tokens: 1024
+    - model_ref: "gpt_oss_20b"
+      temperature: 0.2
+      max_output_tokens: 1024
+
+  # Strong default
+  analysis_default:
+    - model_ref: "claude_sonnet_45_global"
+      temperature: 0.2
+      max_output_tokens: 3072
+    - model_ref: "claude_opus_45_global"
+      temperature: 0.2
+      max_output_tokens: 3072
+    - model_ref: "gpt_oss_120b"
+      temperature: 0.2
+      max_output_tokens: 3072
+    - model_ref: "nova_pro"
+      temperature: 0.2
+      max_output_tokens: 3072
+
+  # High quality (no extended thinking)
+  analysis_high:
+    - model_ref: "claude_opus_46_us"
+      temperature: 0.2
+      max_output_tokens: 4096
+    - model_ref: "claude_sonnet_45_global"
+      temperature: 0.2
+      max_output_tokens: 4096
+    - model_ref: "gpt_oss_120b"
+      temperature: 0.2
+      max_output_tokens: 4096
+    - model_ref: "nova_pro"
+      temperature: 0.2
+      max_output_tokens: 4096
+
+  # Max reasoning (extended thinking on Claude; Claude-first with explicit fallbacks)
+  analysis_max:
+    - model_ref: "claude_opus_46_global"
+      # IMPORTANT: when thinking is enabled, Claude requires temperature=1
+      temperature: 1
+      max_output_tokens: 16000
+      anthropic:
+        thinking:
+          enabled: true
+          budget_tokens: 14000
+
+    - model_ref: "gpt_oss_120b"
+      temperature: 0.2
+      max_output_tokens: 8192
+
+    - model_ref: "nova_pro"
+      temperature: 0.2
+      max_output_tokens: 8192
