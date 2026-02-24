@@ -1,0 +1,32 @@
+# foundation_test
+
+This repo is a minimal foundational playground for:
+
+- Basic Bedrock Runtime API setup (invoke + bearer token flow)
+- Quick LLM behavior/performance validation in a local notebook workflow
+
+## What is included
+
+- `test_bedrock.ipynb`
+  - Local test notebook for request construction, model invocation, and response checks
+  - Useful for sanity checks across prompt styles and model presets
+- `bedrock_harness.yaml`
+  - Harness configuration for auth, endpoints, model presets, and defaults
+
+## Main goals
+
+- Keep setup simple and reproducible
+- Validate end-to-end API connectivity quickly
+- Compare LLM output quality/latency at a foundational baseline level
+
+## Quick start
+
+1. Create/activate your Python environment.
+2. Install dependencies used in the notebook (for example `requests` and `pyyaml`).
+3. Set required environment variables (for example bearer token / region).
+4. Open and run `test_bedrock.ipynb`.
+
+## Security note
+
+- Do not commit real tokens or secrets.
+- Use environment variables for credentials.
