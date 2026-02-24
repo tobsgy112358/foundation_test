@@ -88,6 +88,17 @@ models:
     provider: "nova"
     model_id: "amazon.nova-micro-v1:0"
 
+  # ---------------------------
+  # Multimodal generation models
+  # ---------------------------
+  nova_canvas:
+    provider: "nova"
+    model_id: "amazon.nova-canvas-v1:0"
+
+  nova_reel:
+    provider: "nova"
+    model_id: "amazon.nova-reel-v1:0"
+
 presets:
   # Fast sanity checks (Claude-first)
   cheap_fast:
@@ -149,3 +160,135 @@ presets:
     - model_ref: "nova_pro"
       temperature: 0.2
       max_output_tokens: 8192
+
+multimodal:
+  output_dir: "./outputs"
+
+  # Scenarios executed by default in test_bedrock_multimodal.ipynb
+  default_run:
+    - "image_generation_canvas"
+    - "video_generation_reel"
+    - "image_understanding_claude"
+    - "video_understanding_claude"
+
+  scenarios:
+    # ---------------------------------------------------------
+    # 1) Image generation (Nova Canvas)
+    # ---------------------------------------------------------
+    image_generation_canvas:
+      kind: "invoke_template"
+      model_ref: "nova_canvas"
+      endpoint_path: "/model/{model_id}/invoke"
+      timeout_seconds: 180
+
+      template_vars:
+        prompt: "A cinematic cyberpunk city at sunrise, volumetric light, ultra detailed."
+        negative_prompt: "blurry, low resolution, watermark, text artifacts"
+        width: 1024
+        height: 1024
+        cfg_scale: 8.0
+        seed: 7
+        number_of_images: 1
+
+      request_template:
+        taskType: "TEXT_IMAGE"
+        textToImageParams:
+          text: "{prompt}"
+          negativeText: "{negative_prompt}"
+        imageGenerationConfig:
+          numberOfImages: "{number_of_images}"
+          width: "{width}"
+          height: "{height}"
+          cfgScale: "{cfg_scale}"
+          seed: "{seed}"
+
+      response:
+        type: "base64_images"
+        path: "images"
+        save_dir: "images"
+        file_ext: "png"
+
+    # ---------------------------------------------------------
+    # 2) Video generation (Nova Reel)
+    #    If your account/region returns async job metadata only,
+    #    the notebook will capture the job id for follow-up polling.
+    # ---------------------------------------------------------
+    video_generation_reel:
+      kind: "invoke_template"
+      model_ref: "nova_reel"
+      endpoint_path: "/model/{model_id}/invoke"
+      timeout_seconds: 300
+
+      template_vars:
+        prompt: "A drone fly-through above snow mountains at golden hour, cinematic."
+        duration_seconds: 6
+        fps: 24
+        dimension: "1280x720"
+        seed: 11
+
+      request_template:
+        taskType: "TEXT_VIDEO"
+        textToVideoParams:
+          text: "{prompt}"
+        videoGenerationConfig:
+          durationSeconds: "{duration_seconds}"
+          fps: "{fps}"
+          dimension: "{dimension}"
+          seed: "{seed}"
+
+      response:
+        type: "base64_video_or_job"
+        video_path_candidates:
+          - "video"
+          - "videoBase64"
+          - "output.video"
+          - "result.video"
+        job_id_candidates:
+          - "invocationArn"
+          - "jobArn"
+          - "jobId"
+          - "id"
+        save_dir: "videos"
+        file_ext: "mp4"
+
+    # ---------------------------------------------------------
+    # 3) Image understanding (Claude multimodal)
+    # ---------------------------------------------------------
+    image_understanding_claude:
+      kind: "anthropic_messages"
+      model_ref: "claude_sonnet_45_global"
+      timeout_seconds: 180
+      max_output_tokens: 1200
+      temperature: 0.2
+
+      system_prompt: "You are a visual analyst. Be precise and concise."
+      user_prompt: "Please describe the image, extract key objects, and infer the likely scenario."
+      media:
+        - name: "input_image"
+          type: "image"
+          path: "./samples/demo_image.jpg"
+          media_type: "image/jpeg"
+
+      response:
+        type: "anthropic_text"
+
+    # ---------------------------------------------------------
+    # 4) Video understanding (Claude multimodal)
+    # ---------------------------------------------------------
+    video_understanding_claude:
+      kind: "anthropic_messages"
+      model_ref: "claude_sonnet_45_global"
+      timeout_seconds: 240
+      max_output_tokens: 1400
+      temperature: 0.2
+
+      system_prompt: "You are a video analyst. Summarize actions, timeline, and key events."
+      user_prompt: "Please summarize this video and list major events in chronological order."
+      media:
+        - name: "input_video"
+          type: "video"
+          path: "./samples/demo_video.mp4"
+          media_type: "video/mp4"
+
+      response:
+        type: "anthropic_text"
